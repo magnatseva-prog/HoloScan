@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HoloScan</string>
+    <string name="title_activity_main">HoloScan</string>
+    <string name="package_name">com.holoscan.app</string>
+    <string name="custom_url_scheme">com.holoscan.app</string>
+</resources>

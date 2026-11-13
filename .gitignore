@@ -1,0 +1,24 @@
+# зависимости — ставятся через npm install
+node_modules/
+
+# сборки Android и готовые APK (их выкладывать в Releases, не в код)
+*.apk
+*.aab
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+
+# ключи проекта Firebase — у каждого свои, в публичный репозиторий не кладём
+android/app/google-services.json
+
+# временные файлы
+www/test/
+*.log
+.DS_Store
+Thumbs.db
+
+# исходные модели — скачиваются заново (см. tools/build_embed.py), устаревшая модель
+tools/models/mobilenetv2-12*.onnx
+tools/models/mnv2_feat.onnx

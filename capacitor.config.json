@@ -1,0 +1,31 @@
+{
+  "appId": "com.holoscan.app",
+  "appName": "HoloScan",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0f1420"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": [
+        "google.com"
+      ]
+    },
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_holoscan",
+      "iconColor": "#3d9bff"
+    },
+    "BackgroundRunner": {
+      "label": "com.holoscan.prices",
+      "src": "runners/prices.js",
+      "event": "checkPrices",
+      "repeat": true,
+      "interval": 360,
+      "autoStart": true
+    }
+  }
+}
