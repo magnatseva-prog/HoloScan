@@ -21,7 +21,7 @@ export function trendHtml(detail, variant, item) {
   const cm = detail?.pricing?.cardmarket;
   const h = variant === 'holo' || variant === 'reverse' ? '-holo' : '';
   const eur = (v) => `€${v.toFixed(2)}`;
-  const pick = (k) => { const v = cm?.[`${k}${h}`] ?? cm?.[k]; return v > 0 ? v : null; };
+  const pick = (k) => { const v = cm?.[`${k}${h}`] || cm?.[k]; return v > 0 ? v : null; }; // 0 — «нет данных»
   const pts = [['avg30', t('trend.d30')], ['avg7', t('trend.d7')], ['avg1', t('trend.d1')], ['trend', t('trend.now')]]
     .map(([k, l]) => ({ v: pick(k), l })).filter((p) => p.v != null).map((p) => ({ ...p, s: eur(p.v) }));
   const own = (item?.hist || []).slice(-30).map(([d, v]) => ({ v, l: d.slice(5).replace('-', '.'), s: '' }));

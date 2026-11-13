@@ -155,9 +155,10 @@ export function priceFor(detail, variant, currency = 'USD') {
   const fromCm = () => {
     if (!cm) return null;
     const holo = variant === 'holo' || variant === 'reverse';
-    const val = holo ? (cm['trend-holo'] ?? cm['avg-holo']) : (cm.trend ?? cm.avg);
-    const v = val ?? cm.trend ?? cm.avg;
-    return v != null ? { value: v, currency: cm.unit || 'EUR', src: 'Cardmarket' } : null;
+    // 0 у Cardmarket значит «нет данных», а не бесплатную карту
+    const val = holo ? (cm['trend-holo'] || cm['avg-holo']) : (cm.trend || cm.avg);
+    const v = val || cm.trend || cm.avg;
+    return v > 0 ? { value: v, currency: cm.unit || 'EUR', src: 'Cardmarket' } : null;
   };
   const order = currency === 'EUR' ? [fromCm, fromTp] : [fromTp, fromCm];
   for (const f of order) { const r = f(); if (r) return r; }

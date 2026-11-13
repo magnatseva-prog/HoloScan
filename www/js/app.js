@@ -305,13 +305,13 @@ async function renderSheet() {
   const tpKey = { normal: 'normal', holo: 'holofoil', reverse: 'reverse-holofoil', firstEdition: '1st-edition-holofoil' }[variant];
   const tv = tp?.[tpKey];
   if (tv) {
-    const f = (v) => (v != null ? `$${v.toFixed(2)}` : '—');
+    const f = (v) => (v > 0 ? `$${v.toFixed(2)}` : '—');
     rows.push([t('pr.tpMarket'), f(tv.marketPrice)], [t('pr.tpRange'), `${f(tv.lowPrice)} / ${f(tv.highPrice)}`]);
   }
   if (cm) {
     const h = variant === 'holo' || variant === 'reverse' ? '-holo' : '';
-    const f = (v) => (v != null ? `€${v.toFixed(2)}` : '—');
-    rows.push([t('pr.cmTrend'), f(cm[`trend${h}`] ?? cm.trend)], [t('pr.cmAvg30'), f(cm[`avg30${h}`] ?? cm.avg30)]);
+    const f = (v) => (v > 0 ? `€${v.toFixed(2)}` : '—');
+    rows.push([t('pr.cmTrend'), f(cm[`trend${h}`] || cm.trend)], [t('pr.cmAvg30'), f(cm[`avg30${h}`] || cm.avg30)]);
   }
   $('#d-prices').innerHTML = rows.length
     ? rows.map(([a, b]) => `<div><span>${a}</span><span>${b}</span></div>`).join('')
