@@ -8,7 +8,7 @@
   <img alt="On-device AI" src="https://img.shields.io/badge/AI-on--device-8A2BE2">
   <img alt="Cards: 25,000+" src="https://img.shields.io/badge/cards-25%2C000%2B-F5C84C">
   <img alt="Card languages: 14" src="https://img.shields.io/badge/card%20languages-14-3D9BFF">
-  <img alt="App languages: 7" src="https://img.shields.io/badge/app%20languages-7-35D07F">
+  <img alt="App languages: 8" src="https://img.shields.io/badge/app%20languages-8-35D07F">
 </p>
 
 <p align="center">
@@ -18,6 +18,7 @@
 <p align="center">
   <a href="#-features">Features</a> ·
   <a href="#-screenshots">Screenshots</a> ·
+  <a href="#-in-your-language">In your language</a> ·
   <a href="#-how-recognition-works">How it works</a> ·
   <a href="#-build-from-source">Build</a> ·
   <a href="#-по-русски">По-русски</a>
@@ -54,29 +55,180 @@
 
 **🌍 Languages**
 - Cards in **14 languages**: English, Español, Français, Deutsch, Italiano, Português, 日本語, 한국어, 中文, ไทย, Bahasa Indonesia and more
-- App in **7 languages**: English, Русский, Español, Français, Deutsch, Italiano, Português
+- App in **8 languages**: English, Русский, 日本語, Español, Français, Deutsch, Italiano, Português
 
 ## 📱 Screenshots
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/03-scan-result.jpg" width="240" alt="Scan result"><br><sub><b>Scan result</b> — your photo vs. the match</sub></td>
-    <td align="center"><img src="docs/screenshots/04-collection.jpg" width="240" alt="Collection"><br><sub><b>Collection</b> — value chart and top movers</sub></td>
-    <td align="center"><img src="docs/screenshots/05-card-prices.jpg" width="240" alt="Card prices"><br><sub><b>Card</b> — prices and price trend</sub></td>
+    <td align="center"><img src="docs/screenshots/en/03-scan-result.jpg" width="240" alt="Scan result"><br><sub><b>Scan result</b> — your photo vs. the match</sub></td>
+    <td align="center"><img src="docs/screenshots/en/04-collection.jpg" width="240" alt="Collection"><br><sub><b>Collection</b> — value chart and top movers</sub></td>
+    <td align="center"><img src="docs/screenshots/en/05-card-prices.jpg" width="240" alt="Card prices"><br><sub><b>Card</b> — prices and price trend</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/08-grading.jpg" width="240" alt="AI grading"><br><sub><b>AI grading</b> — estimated grade</sub></td>
-    <td align="center"><img src="docs/screenshots/09-grading-details.jpg" width="240" alt="Grading details"><br><sub><b>Grading details</b> — centering, corners, edges</sub></td>
-    <td align="center"><img src="docs/screenshots/06-set-progress.jpg" width="240" alt="Set progress"><br><sub><b>Sets</b> — completion and cost to finish</sub></td>
+    <td align="center"><img src="docs/screenshots/en/08-grading.jpg" width="240" alt="AI grading"><br><sub><b>AI grading</b> — estimated grade</sub></td>
+    <td align="center"><img src="docs/screenshots/en/09-grading-details.jpg" width="240" alt="Grading details"><br><sub><b>Grading details</b> — centering, corners, edges</sub></td>
+    <td align="center"><img src="docs/screenshots/en/06-set-progress.jpg" width="240" alt="Set progress"><br><sub><b>Sets</b> — completion and cost to finish</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/02-catalog.jpg" width="240" alt="Catalog"><br><sub><b>Catalog</b> — search any card</sub></td>
-    <td align="center"><img src="docs/screenshots/07-sealed.jpg" width="240" alt="Sealed products"><br><sub><b>Sealed</b> — boxes, ETBs, packs</sub></td>
-    <td align="center"><img src="docs/screenshots/10-trade.jpg" width="240" alt="Trade calculator"><br><sub><b>Trade calculator</b></sub></td>
+    <td align="center"><img src="docs/screenshots/en/02-catalog.jpg" width="240" alt="Catalog"><br><sub><b>Catalog</b> — search any card</sub></td>
+    <td align="center"><img src="docs/screenshots/en/07-sealed.jpg" width="240" alt="Sealed products"><br><sub><b>Sealed</b> — boxes, ETBs, packs</sub></td>
+    <td align="center"><img src="docs/screenshots/en/10-trade.jpg" width="240" alt="Trade calculator"><br><sub><b>Trade calculator</b></sub></td>
   </tr>
 </table>
 
 <sub>Screenshots use a demo collection: real cards and current prices, the value history is illustrative.</sub>
+
+## 🌍 In your language
+
+The app, card names and prices follow your language: Japanese cards for 日本語, Spanish cards for Español and so on. Tap a language to see it.
+
+<details>
+<summary><b>🇷🇺 Русский</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/ru/01-welcome.jpg" width="200" alt="🇷🇺 Русский — welcome"></td>
+    <td><img src="docs/screenshots/ru/03-scan-result.jpg" width="200" alt="🇷🇺 Русский — scan-result"></td>
+    <td><img src="docs/screenshots/ru/04-collection.jpg" width="200" alt="🇷🇺 Русский — collection"></td>
+    <td><img src="docs/screenshots/ru/08-grading.jpg" width="200" alt="🇷🇺 Русский — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/ru/02-catalog.jpg" width="200" alt="🇷🇺 Русский — catalog"></td>
+    <td><img src="docs/screenshots/ru/05-card-prices.jpg" width="200" alt="🇷🇺 Русский — card-prices"></td>
+    <td><img src="docs/screenshots/ru/06-set-progress.jpg" width="200" alt="🇷🇺 Русский — set-progress"></td>
+    <td><img src="docs/screenshots/ru/10-trade.jpg" width="200" alt="🇷🇺 Русский — trade"></td>
+  </tr>
+</table>
+
+All Русский screenshots: [docs/screenshots/ru](docs/screenshots/ru)
+</details>
+
+<details>
+<summary><b>🇯🇵 日本語</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/ja/01-welcome.jpg" width="200" alt="🇯🇵 日本語 — welcome"></td>
+    <td><img src="docs/screenshots/ja/03-scan-result.jpg" width="200" alt="🇯🇵 日本語 — scan-result"></td>
+    <td><img src="docs/screenshots/ja/04-collection.jpg" width="200" alt="🇯🇵 日本語 — collection"></td>
+    <td><img src="docs/screenshots/ja/08-grading.jpg" width="200" alt="🇯🇵 日本語 — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/ja/02-catalog.jpg" width="200" alt="🇯🇵 日本語 — catalog"></td>
+    <td><img src="docs/screenshots/ja/05-card-prices.jpg" width="200" alt="🇯🇵 日本語 — card-prices"></td>
+    <td><img src="docs/screenshots/ja/06-set-progress.jpg" width="200" alt="🇯🇵 日本語 — set-progress"></td>
+    <td><img src="docs/screenshots/ja/10-trade.jpg" width="200" alt="🇯🇵 日本語 — trade"></td>
+  </tr>
+</table>
+
+All 日本語 screenshots: [docs/screenshots/ja](docs/screenshots/ja)
+</details>
+
+<details>
+<summary><b>🇪🇸 Español</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/es/01-welcome.jpg" width="200" alt="🇪🇸 Español — welcome"></td>
+    <td><img src="docs/screenshots/es/03-scan-result.jpg" width="200" alt="🇪🇸 Español — scan-result"></td>
+    <td><img src="docs/screenshots/es/04-collection.jpg" width="200" alt="🇪🇸 Español — collection"></td>
+    <td><img src="docs/screenshots/es/08-grading.jpg" width="200" alt="🇪🇸 Español — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/es/02-catalog.jpg" width="200" alt="🇪🇸 Español — catalog"></td>
+    <td><img src="docs/screenshots/es/05-card-prices.jpg" width="200" alt="🇪🇸 Español — card-prices"></td>
+    <td><img src="docs/screenshots/es/06-set-progress.jpg" width="200" alt="🇪🇸 Español — set-progress"></td>
+    <td><img src="docs/screenshots/es/10-trade.jpg" width="200" alt="🇪🇸 Español — trade"></td>
+  </tr>
+</table>
+
+All Español screenshots: [docs/screenshots/es](docs/screenshots/es)
+</details>
+
+<details>
+<summary><b>🇫🇷 Français</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/fr/01-welcome.jpg" width="200" alt="🇫🇷 Français — welcome"></td>
+    <td><img src="docs/screenshots/fr/03-scan-result.jpg" width="200" alt="🇫🇷 Français — scan-result"></td>
+    <td><img src="docs/screenshots/fr/04-collection.jpg" width="200" alt="🇫🇷 Français — collection"></td>
+    <td><img src="docs/screenshots/fr/08-grading.jpg" width="200" alt="🇫🇷 Français — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/fr/02-catalog.jpg" width="200" alt="🇫🇷 Français — catalog"></td>
+    <td><img src="docs/screenshots/fr/05-card-prices.jpg" width="200" alt="🇫🇷 Français — card-prices"></td>
+    <td><img src="docs/screenshots/fr/06-set-progress.jpg" width="200" alt="🇫🇷 Français — set-progress"></td>
+    <td><img src="docs/screenshots/fr/10-trade.jpg" width="200" alt="🇫🇷 Français — trade"></td>
+  </tr>
+</table>
+
+All Français screenshots: [docs/screenshots/fr](docs/screenshots/fr)
+</details>
+
+<details>
+<summary><b>🇩🇪 Deutsch</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/de/01-welcome.jpg" width="200" alt="🇩🇪 Deutsch — welcome"></td>
+    <td><img src="docs/screenshots/de/03-scan-result.jpg" width="200" alt="🇩🇪 Deutsch — scan-result"></td>
+    <td><img src="docs/screenshots/de/04-collection.jpg" width="200" alt="🇩🇪 Deutsch — collection"></td>
+    <td><img src="docs/screenshots/de/08-grading.jpg" width="200" alt="🇩🇪 Deutsch — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/de/02-catalog.jpg" width="200" alt="🇩🇪 Deutsch — catalog"></td>
+    <td><img src="docs/screenshots/de/05-card-prices.jpg" width="200" alt="🇩🇪 Deutsch — card-prices"></td>
+    <td><img src="docs/screenshots/de/06-set-progress.jpg" width="200" alt="🇩🇪 Deutsch — set-progress"></td>
+    <td><img src="docs/screenshots/de/10-trade.jpg" width="200" alt="🇩🇪 Deutsch — trade"></td>
+  </tr>
+</table>
+
+All Deutsch screenshots: [docs/screenshots/de](docs/screenshots/de)
+</details>
+
+<details>
+<summary><b>🇮🇹 Italiano</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/it/01-welcome.jpg" width="200" alt="🇮🇹 Italiano — welcome"></td>
+    <td><img src="docs/screenshots/it/03-scan-result.jpg" width="200" alt="🇮🇹 Italiano — scan-result"></td>
+    <td><img src="docs/screenshots/it/04-collection.jpg" width="200" alt="🇮🇹 Italiano — collection"></td>
+    <td><img src="docs/screenshots/it/08-grading.jpg" width="200" alt="🇮🇹 Italiano — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/it/02-catalog.jpg" width="200" alt="🇮🇹 Italiano — catalog"></td>
+    <td><img src="docs/screenshots/it/05-card-prices.jpg" width="200" alt="🇮🇹 Italiano — card-prices"></td>
+    <td><img src="docs/screenshots/it/06-set-progress.jpg" width="200" alt="🇮🇹 Italiano — set-progress"></td>
+    <td><img src="docs/screenshots/it/10-trade.jpg" width="200" alt="🇮🇹 Italiano — trade"></td>
+  </tr>
+</table>
+
+All Italiano screenshots: [docs/screenshots/it](docs/screenshots/it)
+</details>
+
+<details>
+<summary><b>🇵🇹 Português</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="docs/screenshots/pt/01-welcome.jpg" width="200" alt="🇵🇹 Português — welcome"></td>
+    <td><img src="docs/screenshots/pt/03-scan-result.jpg" width="200" alt="🇵🇹 Português — scan-result"></td>
+    <td><img src="docs/screenshots/pt/04-collection.jpg" width="200" alt="🇵🇹 Português — collection"></td>
+    <td><img src="docs/screenshots/pt/08-grading.jpg" width="200" alt="🇵🇹 Português — grading"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/pt/02-catalog.jpg" width="200" alt="🇵🇹 Português — catalog"></td>
+    <td><img src="docs/screenshots/pt/05-card-prices.jpg" width="200" alt="🇵🇹 Português — card-prices"></td>
+    <td><img src="docs/screenshots/pt/06-set-progress.jpg" width="200" alt="🇵🇹 Português — set-progress"></td>
+    <td><img src="docs/screenshots/pt/10-trade.jpg" width="200" alt="🇵🇹 Português — trade"></td>
+  </tr>
+</table>
+
+All Português screenshots: [docs/screenshots/pt](docs/screenshots/pt)
+</details>
 
 ## 🧠 How recognition works
 
@@ -132,6 +284,6 @@ HoloScan is a fan-made tool and is not affiliated with, endorsed or sponsored by
 - **Цены:** TCGplayer и Cardmarket для каждого варианта, динамика цены, 3 500+ запечатанных товаров (бустер-боксы, ETB, тины).
 - **Коллекция:** график стоимости, лидеры изменений за неделю, сеты с прогрессом сбора, папки, список желаний с оповещениями о снижении цены, калькулятор обмена, синхронизация через Google.
 - **AI-оценка состояния:** центровка, углы и края по фото, примерная оценка по шкале PSA.
-- **Языки:** карты на 14 языках, интерфейс на 7, включая русский.
+- **Языки:** карты на 14 языках, интерфейс на 8, включая русский и японский.
 
 Сборка описана выше, заметки для разработки — в [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
