@@ -1,5 +1,5 @@
 """Баннер для README: docs/banner.png — логотип, слоган и три экрана в рамках телефонов.
-Скриншоты берёт из docs/screenshots (их снимает tools/screenshots.mjs)."""
+Скриншоты берёт из docs/screenshots/en (их снимает tools/screenshots.mjs)."""
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from make_icons import mark
 
 ROOT = Path(__file__).resolve().parent.parent
-SHOTS = ROOT / 'docs' / 'screenshots'
+SHOTS = ROOT / 'docs' / 'screenshots' / 'en'
 W, H = 1600, 820
 FONT = 'C:/Windows/Fonts/segoeuib.ttf'
 FONT_R = 'C:/Windows/Fonts/segoeui.ttf'
