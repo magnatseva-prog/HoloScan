@@ -142,8 +142,8 @@ def main():
     # 2) все карты: сразу проецируем и храним только сжатые векторы
     have = {}
     if CACHE.exists():
-        z = np.load(CACHE)
-        have = {i: (w, a) for i, w, a in zip(z['ids'], z['w'], z['a'])}
+        with np.load(CACHE) as z:  # закрываем файл сразу, иначе Windows не даст его заменить
+            have = {str(i): (w, a) for i, w, a in zip(z['ids'], z['w'], z['a'])}
     for cid, (w, a) in sample.items():
         have[cid] = (project(w[None], muW, PW)[0].astype(np.float16), project(a[None], muA, PA)[0].astype(np.float16))
     todo = [i for i in url if i not in have]

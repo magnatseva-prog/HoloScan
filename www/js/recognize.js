@@ -255,9 +255,11 @@ function loadImg(url) {
     im.src = url;
   });
 }
-export const BONUS = { name: 0.12, exact: 0.03, number: 0.16, hp: 0.05, hpStrong: 0.08 };
+export const BONUS = { name: 0.12, exact: 0.03, number: 0.16, hp: 0.05, hpStrong: 0.08, total: 0.04 };
 // сходство картинки выше этого — почти наверняка та самая карта
 export const SURE = { sim: 0.62, gap: 0.08 };
+// Быстрый путь: картинка узнана однозначно — текст не читаем (перепечатки с тем же рисунком сюда не попадают: у них нет отрыва)
+export const FAST = { sim: 0.6, gap: 0.12 };
 
 function allSims(db, q) {
   const out = new Float32Array(db.ids.length);
@@ -382,6 +384,26 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
   const visP = Promise.all([embedDb(), embedPhoto(card)]);
   let sims = null;
 
+  if (opts.fast !== false) {
+    const [db, q] = await visP;
+    sims = allSims(db, q);
+    mark('vis');
+    const top = topK(sims, 8);
+    const best = top[0], bestV = sims[best];
+    // отрыв считаем от лучшей карты с другим рисунком: у одинаковых перепечаток он почти нулевой
+    const other = top.find((i) => i !== best && sims[i] < bestV - 0.02);
+    const twins = top.filter((i) => sims[i] >= bestV - 0.02).length;
+    if (opts.debug) opts.debug.vis = [db.ids[best], +bestV.toFixed(3), other == null ? null : +(bestV - sims[other]).toFixed(3), twins];
+    if (bestV >= FAST.sim && twins === 1 && (other == null || bestV - sims[other] >= FAST.gap)) {
+      const c = prefer(db.ids[best]);
+      if (c) {
+        const candidates = [c, ...top.slice(1).map((i) => prefer(db.ids[i])).filter(Boolean)].filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i);
+        mark('done');
+        return { candidates, sure: true, lang: c.lang, hp: null, name: c.name, number: null, text: '', head: '', bottom: '', fast: true };
+      }
+    }
+  }
+
   // Название (верхняя полоса) и номер (нижняя) читаем одновременно в двух воркерах.
   onStage('st.read');
   const [h1, bottom] = await Promise.all([
@@ -462,7 +484,10 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
     const simOf = (id) => { const i = db.pos.get(id); return i == null ? null : sims[i]; };
     const score = new Map(); // id → {c, s (итог), v (картинка)}
     const put = (c, v, s) => { const p = score.get(c.id); if (!p || s > p.s) score.set(c.id, { c, v, s }); };
-    const bonus = (id) => (nameIds.has(id) ? BONUS.name + (exactIds.has(id) ? BONUS.exact : 0) : 0) + (hpIds.has(id) ? hpBonus : 0);
+    // число карт в сете («/182») различает перепечатки с одинаковым рисунком, даже если сам номер прочитан с ошибкой
+    const totalOk = (c) => !!number && !!setOf(index, c)?.cardCount && setTotalMatch(index, c, number);
+    const bonus = (id, c = prefer(id)) => (nameIds.has(id) ? BONUS.name + (exactIds.has(id) ? BONUS.exact : 0) : 0) + (hpIds.has(id) ? hpBonus : 0)
+      + (c && !byNum.has(c) && totalOk(c) ? BONUS.total : 0);
 
     // 1) кандидаты по тексту: сходство картинки плюс бонус за совпавшие имя, номер, HP
     let fetched = 0;
@@ -476,7 +501,7 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
         } catch {}
       }
       v ??= 0.2;
-      put(c, v, v + bonus(c.id) + (byNum.has(c) ? BONUS.number : 0));
+      put(c, v, v + bonus(c.id, c) + (byNum.has(c) ? BONUS.number : 0));
     }));
 
     if (db.ids.length && !both.length) {
@@ -485,7 +510,7 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
       const hpIdx = [...hpIds].map((id) => db.pos.get(id)).filter((x) => x != null);
       for (const i of [...topK(sims, 40), ...topK(sims, 30, hpIdx)]) {
         const c = prefer(db.ids[i]);
-        if (c) put(c, sims[i], sims[i] + bonus(c.id));
+        if (c) put(c, sims[i], sims[i] + bonus(c.id, c));
       }
     }
     return finish();

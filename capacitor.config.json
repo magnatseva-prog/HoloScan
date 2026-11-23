@@ -3,7 +3,7 @@
   "appName": "HoloScan",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0f1420"
+    "backgroundColor": "#f4efe4"
   },
   "plugins": {
     "FirebaseAuthentication": {
@@ -17,7 +17,7 @@
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_holoscan",
-      "iconColor": "#3d9bff"
+      "iconColor": "#ff5a36"
     },
     "BackgroundRunner": {
       "label": "com.holoscan.prices",

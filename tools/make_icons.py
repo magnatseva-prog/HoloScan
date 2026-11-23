@@ -1,39 +1,40 @@
 """Иконка и заставка HoloScan для Android (перезаписывает ресурсы Capacitor)."""
-import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 RES = Path(__file__).resolve().parent.parent / 'android' / 'app' / 'src' / 'main' / 'res'
-BG = (15, 20, 32)
-STOPS = [(255, 94, 168), (255, 210, 76), (76, 240, 176), (61, 155, 255), (176, 107, 255), (255, 94, 168)]
+BG = (244, 239, 228)      # бумага
+SUN = (255, 212, 71)
+INK = (23, 19, 14)
+RED = (255, 90, 54)
+PAPER = (255, 253, 248)
 
 
-def conic(size):
-    im = Image.new('RGB', (size, size))
-    px = im.load()
-    c = size / 2
-    for y in range(size):
-        for x in range(size):
-            t = ((math.atan2(y - c, x - c) / (2 * math.pi)) + 0.5) * (len(STOPS) - 1)
-            i = min(int(t), len(STOPS) - 2)
-            f = t - i
-            px[x, y] = tuple(round(STOPS[i][k] * (1 - f) + STOPS[i + 1][k] * f) for k in range(3))
-    return im
+def card_layer(big, w, h, fill, rot, dx, dy, window=True):
+    """Карта с чернильной обводкой и окошком под рисунок, повёрнутая на rot градусов."""
+    lay = Image.new('RGBA', (big, big), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lay)
+    x0, y0 = (big - w) / 2 + dx, (big - h) / 2 + dy
+    sh = big * 0.03  # жёсткая тень
+    d.rounded_rectangle((x0 + sh, y0 + sh, x0 + w + sh, y0 + h + sh), radius=w * 0.14, fill=INK)
+    d.rounded_rectangle((x0, y0, x0 + w, y0 + h), radius=w * 0.14, fill=fill, outline=INK, width=round(big * 0.028))
+    if window:
+        m = w * 0.16
+        d.rounded_rectangle((x0 + m, y0 + h * 0.14, x0 + w - m, y0 + h * 0.52), radius=w * 0.06, fill=PAPER, outline=INK, width=round(big * 0.018))
+        d.rounded_rectangle((x0 + m, y0 + h * 0.64, x0 + w * 0.62, y0 + h * 0.71), radius=w * 0.03, fill=INK)
+    return lay.rotate(rot, resample=Image.BICUBIC, center=(big / 2 + dx, big / 2 + dy))
 
 
-def mark(size):
-    """Голографический квадрат с тёмной «картой» внутри."""
+def mark(size, bg=True):
+    """Значок: на жёлтом скруглённом квадрате две карты — бумажная сзади, киноварная спереди."""
     big = size * 4
-    im = conic(big)
-    d = ImageDraw.Draw(im)
-    m = big * 0.3
-    d.rounded_rectangle((m, big * 0.22, big - m, big * 0.78), radius=big * 0.05, fill=BG)
-    d.rounded_rectangle((m + big * 0.06, big * 0.3, big - m - big * 0.06, big * 0.52), radius=big * 0.02, fill=(61, 155, 255))
-    mask = Image.new('L', (big, big), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, big - 1, big - 1), radius=big * 0.22, fill=255)
     out = Image.new('RGBA', (big, big), (0, 0, 0, 0))
-    out.paste(im, (0, 0), mask)
+    if bg:
+        ImageDraw.Draw(out).rounded_rectangle((0, 0, big - 1, big - 1), radius=big * 0.24, fill=SUN)
+    w, h = big * 0.40, big * 0.56
+    out.alpha_composite(card_layer(big, w, h, PAPER, -14, big * 0.09, -big * 0.02, window=False))
+    out.alpha_composite(card_layer(big, w, h, RED, 9, -big * 0.06, big * 0.02))
     return out.resize((size, size), Image.LANCZOS)
 
 
@@ -43,11 +44,11 @@ def main():
         for name in ('ic_launcher.png', 'ic_launcher_round.png'):
             ic.save(RES / f'mipmap-{folder}' / name)
         fg = Image.new('RGBA', (round(s * 2.25), round(s * 2.25)), (0, 0, 0, 0))
-        inner = mark(round(s * 1.3))
+        inner = mark(round(s * 1.3), bg=False)
         fg.paste(inner, ((fg.width - inner.width) // 2, (fg.height - inner.height) // 2), inner)
         fg.save(RES / f'mipmap-{folder}' / 'ic_launcher_foreground.png')
     (RES / 'values' / 'ic_launcher_background.xml').write_text(
-        '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0F1420</color>\n</resources>\n')
+        '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#FFD447</color>\n</resources>\n')
     logo = mark(220)
     for p in RES.glob('drawable*/splash.png'):
         w, h = Image.open(p).size

@@ -20,10 +20,9 @@ const ref = () => `users/${user.uid}`;
 // фото сканов в облако не кладём — документ Firestore ограничен 1 МБ
 // и историю цены каждой карты укорачиваем до 14 точек
 const plainItems = () => store.all().map(({ photo, hist, ...rest }) => ({ ...rest, hist: (hist || []).slice(-14) }));
-const SYNCED = ['scansUsed', 'bonusScans', 'pro'];
+const SYNCED = []; // приложение бесплатное — счётчики сканов больше не синхронизируются
 
-// Слияние при входе: карты объединяем (берём большее количество), счётчики — по максимуму,
-// чтобы переустановка приложения не обнуляла использованные сканы.
+// Слияние при входе: карты объединяем, берём большее количество.
 async function pull() {
   const snap = await Db().getDocument({ reference: ref() });
   const remote = snap?.snapshot?.data;
@@ -38,12 +37,6 @@ async function pull() {
     if (!l) store.importItem(r);
     else if (r.qty > l.qty) store.setQty(l.uid, r.qty);
   }
-  const st = store.settings;
-  const rs = remote.settings || {};
-  st.scansUsed = Math.max(st.scansUsed || 0, rs.scansUsed || 0);
-  st.bonusScans = Math.max(st.bonusScans || 0, rs.bonusScans || 0);
-  st.pro = st.pro || rs.pro === true;
-  store.saveSettings();
   store.flush();
 }
 

@@ -2,7 +2,6 @@
 import { t, setLang, UI_LANGS } from './i18n.js';
 import { settings, saveSettings } from './store.js';
 import { CARD_LANGS } from './api.js';
-import { FREE_SCANS } from './billing.js';
 
 const $ = (s) => document.querySelector(s);
 const QUICK_LANGS = ['en', 'es', 'fr', 'de', 'it', 'pt', 'ja'];
@@ -10,7 +9,7 @@ const QUICK_LANGS = ['en', 'es', 'fr', 'de', 'it', 'pt', 'ja'];
 // картинки экранов — из CSS, без внешних файлов
 const ART = {
   hello: '<div class="tut-art hello"><div class="tut-card c1"></div><div class="tut-card c2"></div><div class="tut-card c3"></div><div class="tut-price">$12.40</div></div>',
-  frame: '<div class="tut-art frame"><div class="tut-phone"><div class="tut-guide"><div class="tut-card in"></div></div><div class="tut-shutter"></div></div></div>',
+  frame: '<div class="tut-art frame"><div class="tut-phone"><div class="tut-guide"><div class="tut-card in"></div></div></div></div>',
   tips: '<div class="tut-art tips"><div class="tut-tip ok"><div class="tut-card sm"></div><b>✓</b></div><div class="tut-tip bad"><div class="tut-card sm glare"></div><b>✕</b></div><div class="tut-tip bad"><div class="tut-card sm tilt"></div><b>✕</b></div></div>',
   coll: '<div class="tut-art coll"><div class="tut-row"><div class="tut-card xs"></div><span></span><b>$4.83</b></div><div class="tut-row"><div class="tut-card xs c2"></div><span></span><b>$0.14</b></div><div class="tut-row"><div class="tut-card xs c3"></div><span></span><b>$21.90</b></div></div>',
 };
@@ -29,7 +28,7 @@ function slides() {
       art: `<div class="tut-langs">${QUICK_LANGS.map((l) => `<button data-l="${l}" class="${settings.cardLang === l ? 'sel' : ''}">${CARD_LANGS[l]}</button>`).join('')}</div>`,
       title: t('tut.4t'), text: t('tut.4d'),
     },
-    { art: ART.coll, title: t('tut.5t'), text: t('tut.5d', { n: FREE_SCANS }) },
+    { art: ART.coll, title: t('tut.5t'), text: t('tut.5d') },
   ];
 }
 

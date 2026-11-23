@@ -22,3 +22,8 @@ Thumbs.db
 # исходные модели — скачиваются заново (см. tools/build_embed.py), устаревшая модель
 tools/models/mobilenetv2-12*.onnx
 tools/models/mnv2_feat.onnx
+
+# временные файлы стенда
+tools/_*.json
+tools/_*.mjs
+tools/_*.html

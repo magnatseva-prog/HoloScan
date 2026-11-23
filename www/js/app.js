@@ -2,7 +2,6 @@ import { loadIndex, norm, setOf, imgUrl, cardDetail, priceFor, variantsOf, bestV
 import { recognize, warmUp } from './recognize.js';
 import { warmEmbed } from './embed.js';
 import * as store from './store.js';
-import * as billing from './billing.js';
 import { t, setLang, plural, dateLocale, UI_LANGS } from './i18n.js';
 import * as sync from './sync.js';
 import * as tutorial from './tutorial.js';
@@ -17,6 +16,17 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const cur = () => store.settings.currency;
 const st = store.settings;
+
+// ---------- тема: как в системе / светлая / тёмная ----------
+st.theme ??= 'auto';
+const darkMq = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const dark = st.theme === 'dark' || (st.theme === 'auto' && darkMq.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#15120e' : '#f4efe4');
+}
+darkMq.addEventListener?.('change', applyTheme);
+applyTheme();
 
 // язык карт «auto» из прошлых версий больше не бывает
 if (!CARD_LANGS[st.cardLang]) st.cardLang = 'en';
@@ -50,9 +60,6 @@ document.addEventListener('click', (e) => {
 // ---------- настройки ----------
 function renderSettings() {
   const opt = (key, val, label) => `<button data-k="${key}" data-v="${val}" class="${String(st[key]) === String(val) ? 'sel' : ''}">${label}</button>`;
-  const plan = billing.isPro()
-    ? `<div class="plan pro">${t('set.planPro')}</div>`
-    : `<div class="plan">${t('set.planFree', { n: billing.scansLeft(), total: billing.FREE_SCANS })}</div><button class="btn" id="set-upgrade">${t('set.upgrade')}</button>`;
   const u = sync.currentUser();
   const account = u
     ? `<div class="account"><img src="${esc(u.photo)}" alt="" onerror="this.style.visibility='hidden'"><div><b>${esc(u.name || u.email)}</b><small>${esc(u.email)}</small><small class="ok">✓ ${t('acc.synced')}</small></div></div>
@@ -60,19 +67,19 @@ function renderSettings() {
     : `<p class="note">${t('acc.note')}</p><button class="btn google" id="acc-in"><span class="g">G</span>${t('acc.signin')}</button>`;
   $('#settings-body').innerHTML = `
     <div class="sec">${t('acc.title')}</div>${account}
-    <div class="sec">${t('set.plan')}</div>${plan}
     <div class="sec">${t('set.appLang')}</div>
     <div class="variants">${Object.entries(UI_LANGS).map(([k, v]) => opt('uiLang', k, v)).join('')}</div>
     <div class="sec">${t('set.cardLang')}</div>
     <div class="variants">${LANG_KEYS.map((k) => opt('cardLang', k, CARD_LANGS[k])).join('')}</div>
     <p class="note">${t('set.cardLangNote')}</p>
+    <div class="sec">${t('set.theme')}</div>
+    <div class="variants">${opt('theme', 'auto', t('theme.auto'))}${opt('theme', 'light', t('theme.light'))}${opt('theme', 'dark', t('theme.dark'))}</div>
     <div class="sec">${t('set.currency')}</div>
     <div class="variants">${opt('currency', 'USD', '$ USD · TCGplayer')}${opt('currency', 'EUR', '€ EUR · Cardmarket')}</div>
     <div class="sec">${t('set.auto')}</div>
     <div class="variants">${opt('autoCollect', true, t('set.yes'))}${opt('autoCollect', false, t('set.no'))}</div>
     <p class="note">${t('set.autoNote')}</p>
     <button class="btn ghost wide" id="set-tutorial">${t('set.tutorial')}</button>`;
-  $('#set-upgrade')?.addEventListener('click', () => openPaywall());
   $('#set-tutorial').onclick = () => { $('#settings').hidden = true; openTutorial(); };
   $('#acc-in')?.addEventListener('click', async (e) => {
     if (!sync.available()) return toast(t('acc.web'), 3000);
@@ -87,6 +94,7 @@ function renderSettings() {
     store.saveSettings();
     if (k === 'uiLang') { setLang(v); refreshAll(); }
     if (k === 'cardLang') { warmUp(v); initCatalog(); }
+    if (k === 'theme') applyTheme();
     if (k === 'currency') { priceCache.clear(); renderGrid($('#grid'), lastResults); renderPortfolio(); }
     renderSettings();
   }));
@@ -100,7 +108,6 @@ function refreshAll() {
   renderGrid($('#grid'), lastResults);
   renderPortfolio();
   renderTray();
-  updateQuota();
 }
 
 // ---------- плитки с ленивой подгрузкой цен ----------
@@ -366,8 +373,6 @@ function confirmScan(item) {
   item.status = 'ok';
   item.sure = true;
   item.pendingCollect = st.autoCollect; // добавим, когда загрузятся цены выбранной карты
-  billing.useScan();
-  updateQuota();
 }
 
 // ---------- ручной поиск (из экрана совпадения) ----------
@@ -395,76 +400,6 @@ let mt;
 $('#mq').oninput = () => { clearTimeout(mt); mt = setTimeout(runManual, 250); };
 $('#manual-close').onclick = () => ($('#manual').hidden = true);
 
-// ---------- лимит сканов, подписка, реклама ----------
-function updateQuota() {
-  const q = $('#quota');
-  q.hidden = false;
-  q.innerHTML = billing.isPro()
-    ? `<span class="pro-tag">Pro</span> ${t('scan.pro')}`
-    : `<span class="pro-tag">Pro</span> ${t('scan.left', { n: billing.scansLeft() })}<br><small>${t('scan.leftTap')}</small>`;
-}
-$('#quota').onclick = () => { if (!billing.isPro()) openPaywall(); };
-
-let payPlan = 'year';
-function openPaywall() {
-  $('#paywall').hidden = false;
-  renderPaywall();
-}
-function renderPaywall() {
-  const P = billing.PLANS;
-  const plan = (k, label, per) => `<button class="plan-opt ${payPlan === k ? 'sel' : ''}" data-plan="${k}">
-      <span>${label}${P[k].save ? ` <em>${t('pay.save', { p: P[k].save })}</em>` : ''}</span><b>${P[k].price} <small>${per}</small></b></button>`;
-  $('#paywall-body').innerHTML = `
-    <div class="pay-hero"><div class="medal small"></div><h2>${t('pay.title')}</h2>
-      <p>${billing.scansLeft() ? t('set.planFree', { n: billing.scansLeft(), total: billing.FREE_SCANS }) : t('pay.sub', { n: billing.FREE_SCANS })}</p></div>
-    <ul class="pay-list"><li>${t('pay.f1')}</li><li>${t('pay.f2')}</li><li>${t('pay.f3')}</li></ul>
-    ${plan('year', t('pay.year'), t('pay.perYear'))}${plan('month', t('pay.month'), t('pay.perMonth'))}
-    <button class="btn wide" id="pay-sub">${t('pay.subscribe')}</button>
-    <p class="note center">${t('pay.terms')}</p>
-    <div class="or"><span>${t('pay.or')}</span></div>
-    <button class="btn ghost wide" id="pay-ad">${t('pay.ad', { n: billing.AD_REWARD })}</button>
-    <div class="row pay-links"><button id="pay-restore">${t('pay.restore')}</button><button id="pay-later">${t('pay.later')}</button></div>`;
-  $('#paywall-body').querySelectorAll('[data-plan]').forEach((b) => (b.onclick = () => { payPlan = b.dataset.plan; renderPaywall(); }));
-  $('#pay-sub').onclick = async () => {
-    const r = await billing.subscribe(payPlan);
-    if (r === 'unavailable') toast(t('pay.soon'), 3500);
-  };
-  $('#pay-restore').onclick = async () => {
-    const r = await billing.restore();
-    if (r === 'unavailable') toast(t('pay.soon'), 3500);
-  };
-  $('#pay-later').onclick = closePaywall;
-  $('#pay-ad').onclick = async (e) => {
-    const b = e.currentTarget;
-    b.disabled = true; b.textContent = t('pay.adLoading');
-    try {
-      const ok = await billing.watchAd(fakeAd);
-      if (ok) { toast(t('pay.adDone', { n: billing.AD_REWARD })); updateQuota(); closePaywall(); return; }
-    } catch (err) {
-      console.error(err);
-      toast(t('pay.adFail'));
-    }
-    renderPaywall();
-  };
-}
-function closePaywall() { $('#paywall').hidden = true; }
-$('#paywall-close').onclick = closePaywall;
-
-// Заглушка рекламы для браузера: 5 секунд и награда.
-function fakeAd() {
-  return new Promise((res) => {
-    const el = $('#fake-ad');
-    el.hidden = false;
-    let s = 5;
-    const tick = () => {
-      $('#fake-ad-timer').textContent = t('ad.closeIn', { s });
-      if (s-- <= 0) { el.hidden = true; res(true); return; }
-      setTimeout(tick, 1000);
-    };
-    tick();
-  });
-}
-
 // ---------- сканер ----------
 let stream = null;
 const scans = [];
@@ -480,7 +415,6 @@ async function openScanner(mode = 'scan', card = null) {
   $('#grade-banner').textContent = t('grade.banner');
   warmUp(st.cardLang);
   updateBadge();
-  updateQuota();
   const msg = $('#cam-msg');
   msg.hidden = true;
   if (stream) return syncAuto();
@@ -554,7 +488,6 @@ function shoot() {
     $('.viewfinder').classList.remove('flash'); void $('.viewfinder').offsetWidth; $('.viewfinder').classList.add('flash');
     return runGrade(c);
   }
-  if (!billing.canScan()) { auto.stop(); return openPaywall(); }
   const c = grabGuide();
   if (!c) return toast(t('scan.notready'));
   $('.viewfinder').classList.remove('flash'); void $('.viewfinder').offsetWidth; $('.viewfinder').classList.add('flash');
@@ -576,19 +509,11 @@ const auto = createAutoScan({
     h.className = `auto-hint ${s}`;
   },
 });
+// автоскан включён всегда: карта в рамке снимается сама, кнопка — для ручного снимка
 function syncAuto() {
-  $('#auto-btn').classList.toggle('on', !!st.autoScan);
-  if (st.autoScan && stream && !$('#scanner').hidden && scanMode === 'scan') auto.start(); else auto.stop();
+  if (stream && !$('#scanner').hidden && scanMode === 'scan') auto.start(); else auto.stop();
 }
-$('#auto-btn').onclick = () => {
-  st.autoScan = !st.autoScan;
-  store.saveSettings();
-  auto.reset();
-  syncAuto();
-  if (st.autoScan) toast(t('auto.on'), 2600);
-};
 
-$('#gallery').onclick = (e) => { if (!billing.canScan()) { e.preventDefault(); openPaywall(); } };
 $('#gallery').onchange = async (e) => {
   const f = e.target.files?.[0];
   e.target.value = '';
@@ -681,8 +606,6 @@ function addScan(canvas) {
       }
       // неуверенный скан не тратит лимит и не попадает в коллекцию сам — сначала пусть проверят
       if (item.status === 'ok') {
-        billing.useScan();
-        updateQuota();
         if (st.autoCollect) collectScan(item, index);
         if (!st.firstFind) celebrate();
       }
@@ -771,9 +694,7 @@ async function openItem(i) {
 function back() {
   if (tutorial.isOpen()) return tutorial.back(), true;
   if (views.modalOpen()) return views.closeModal(), true;
-  if (!$('#fake-ad').hidden) return true;
   if (!$('#celebrate').hidden) return ($('#celebrate').hidden = true), true;
-  if (!$('#paywall').hidden) return closePaywall(), true;
   if (!$('#manual').hidden) return ($('#manual').hidden = true), true;
   if (!$('#settings').hidden) return ($('#settings').hidden = true), true;
   if (!$('#sheet').hidden) return $('#sheet-close').click(), true;
@@ -790,7 +711,6 @@ window.Capacitor?.Plugins?.App?.addListener('backButton', () => {
 sync.onUser(() => {
   renderPortfolio();
   updateBadge();
-  if (!$('#scanner').hidden) updateQuota();
   if (!$('#settings').hidden) renderSettings();
 });
 sync.init();

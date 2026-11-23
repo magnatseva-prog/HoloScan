@@ -1,5 +1,5 @@
 // Пакетный режим: камера сама делает снимок, когда в рамке лежит новая карта,
-// кадр не дрожит и резкий. Смотрим на уменьшенную копию рамки 4 раза в секунду.
+// кадр не дрожит и резкий. Смотрим на уменьшенную копию рамки ~7 раз в секунду.
 // Пороги подобраны на тестовых снимках (tools/testset/harsh):
 //   контуры: карта ≥ 21, стол/ткань/дерево ≤ 15;
 //   «новая карта» (сетка 8×11): сдвиг той же карты ≤ 7, другая карта ≥ 19.5;
@@ -8,7 +8,8 @@ const W = 48, H = 66;
 const SHARP = 18;
 const NEW_CARD = 13;
 const STILL = 5;
-const HOLD = 3; // спокойных кадров подряд (≈0.75 с)
+const HOLD = 3; // спокойных кадров подряд (≈0.45 с)
+const TICK = 150; // мс между проверками
 
 function gray(src, rect) {
   const c = gray.c ??= Object.assign(document.createElement('canvas'), { width: W, height: H });
@@ -65,7 +66,7 @@ export function createAutoScan({ source, rect, onShot, onState, busy = () => fal
     onShot();
   }
   return {
-    start() { if (!timer) { prev = null; timer = setInterval(tick, 250); } },
+    start() { if (!timer) { prev = null; timer = setInterval(tick, TICK); } },
     stop() { clearInterval(timer); timer = null; set(''); },
     reset() { last = null; },
     _tick: tick, // для проверки без камеры

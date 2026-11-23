@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <img alt="Price: free" src="https://img.shields.io/badge/price-100%25%20free-12A150">
   <img alt="Platform: Android" src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white">
   <img alt="Built with Capacitor" src="https://img.shields.io/badge/built%20with-Capacitor-119EFF?logo=capacitor&logoColor=white">
   <img alt="On-device AI" src="https://img.shields.io/badge/AI-on--device-8A2BE2">
@@ -12,7 +13,7 @@
 </p>
 
 <p align="center">
-  <b>Point your camera at a Pokémon card — HoloScan recognizes it in about two seconds<br>and shows its market price on TCGplayer and Cardmarket.</b>
+  <b>Point your camera at a Pokémon card — HoloScan recognizes it in about a second<br>and shows its market price on TCGplayer and Cardmarket.</b>
 </p>
 
 <p align="center">
@@ -28,11 +29,13 @@
 
 ## ✨ Features
 
+**🆓 Completely free** — no scan limits, no subscription, no ads.
+
 **📷 Scan cards in seconds**
 - On-device neural network (MobileNetV2) compares your photo with **25,000+ cards** — works offline, nothing is uploaded
 - Reads the card name, number and HP to tell similar cards apart
 - Handles glare, sleeves, toploaders and tilted photos
-- **Batch mode** — lay cards in the frame one by one, each one is captured automatically
+- **Auto-scan, always on** — just hold a card in the frame and it is captured by itself; lay cards one after another to scan a whole stack
 - Unsure match? It's marked **“Check”** with other likely cards to pick from
 
 **💰 Prices**
@@ -47,6 +50,7 @@
 - **Wishlist** with price-drop alerts, checked in the background
 - **Trade calculator** — is the trade fair?
 - Sign in with Google to sync the collection across devices
+- **Light and dark theme** — or follow the system setting
 
 **🛡 AI grading**
 - Estimates condition from a photo, the way grading companies check it: **centering** (e.g. 56/44), **corners** and **edges**
@@ -234,7 +238,7 @@ All Português screenshots: [docs/screenshots/pt](docs/screenshots/pt)
 
 ```
 photo ─► find the card & straighten it
-       ├─► neural network (MobileNetV2, ONNX Runtime) ─► compare with 25,600 card fingerprints
+       ├─► neural network (MobileNetV2, ONNX Runtime) ─► compare with 25,700 card fingerprints
        └─► OCR (tesseract.js): name · number "039/198" · HP
                          ▼
           one score per candidate: image similarity + bonuses for matching text
@@ -242,7 +246,9 @@ photo ─► find the card & straighten it
           confident? ─► add to collection        unsure? ─► "Check" + other matches
 ```
 
-Everything runs on the phone. On a test set of harsh photos (glare, toploader, perspective, JPEG noise) the right card comes first in **89%** of cases and is in the top 3 in **95%**; on clean photos — 29 of 30.
+Everything runs on the phone. On a test set of harsh photos (glare, toploader, perspective, JPEG noise) the right card comes first in **92%** of cases and is in the top 3 in **95%**; on clean photos — 29 of 30.
+
+When the artwork alone is unmistakable, the text step is skipped — such scans take about half a second. Cards that share artwork with a reprint always go through text reading, so speed never costs accuracy.
 
 ## 🔨 Build from source
 
@@ -268,7 +274,8 @@ Developer notes (in Russian): [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 | Recognition | **ONNX Runtime Web** + MobileNetV2 feature maps, **tesseract.js** OCR |
 | Card data & prices | [TCGdex](https://tcgdex.dev) API, [tcgcsv.com](https://tcgcsv.com) (TCGplayer) for sealed products |
 | Accounts & sync | Firebase Authentication + Firestore |
-| Ads & alerts | AdMob (rewarded), Capacitor Local Notifications, Background Runner |
+| Alerts | Capacitor Local Notifications, Background Runner |
+| Look | Fonts [Unbounded](https://fonts.google.com/specimen/Unbounded) and [Manrope](https://fonts.google.com/specimen/Manrope) (SIL OFL), bundled for offline use |
 
 ## ⚖️ Disclaimer
 
@@ -278,12 +285,15 @@ HoloScan is a fan-made tool and is not affiliated with, endorsed or sponsored by
 
 ## 🇷🇺 По-русски
 
-**HoloScan** — Android-приложение для коллекционеров Pokémon TCG. Наводишь камеру на карту — приложение узнаёт её примерно за две секунды и показывает цену на TCGplayer и Cardmarket.
+**HoloScan** — Android-приложение для коллекционеров Pokémon TCG. Наводишь камеру на карту — приложение узнаёт её примерно за секунду и показывает цену на TCGplayer и Cardmarket.
 
+- **Полностью бесплатно:** без лимита сканов, подписки и рекламы.
+- **Автоскан всегда включён:** держи карту в рамке — снимок сделается сам.
 - **Распознавание на телефоне:** нейросеть сравнивает фото с базой из 25 000+ карт, работает без интернета. Справляется с бликами, протекторами и наклоном. Есть пакетный режим: кладёшь карты по одной, снимки делаются сами.
 - **Цены:** TCGplayer и Cardmarket для каждого варианта, динамика цены, 3 500+ запечатанных товаров (бустер-боксы, ETB, тины).
 - **Коллекция:** график стоимости, лидеры изменений за неделю, сеты с прогрессом сбора, папки, список желаний с оповещениями о снижении цены, калькулятор обмена, синхронизация через Google.
 - **AI-оценка состояния:** центровка, углы и края по фото, примерная оценка по шкале PSA.
+- **Светлая и тёмная тема**, или как в системе.
 - **Языки:** карты на 14 языках, интерфейс на 8, включая русский и японский.
 
 Сборка описана выше, заметки для разработки — в [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
