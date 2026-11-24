@@ -30,7 +30,10 @@ function worker(key, psm, lang = 'eng', extra = null) {
   }
   return workers.get(key);
 }
-export const warmUp = (cardLang = 'en') => Promise.all([worker('head', '6', ocrLangOf(cardLang)), worker('bottom', '11')]).catch(() => {});
+const DIGITS = { tessedit_char_whitelist: '0123456789/' };
+// воркеры поднимаются заранее: первый скан не ждёт загрузки моделей. Цифровые (углы с номером) — следом.
+export const warmUp = (cardLang = 'en') => Promise.all([worker('head', '6', ocrLangOf(cardLang)), worker('bottom', '11')])
+  .then(() => Promise.all([worker('digits', '11', 'eng', DIGITS), worker('digitsR', '11', 'eng', DIGITS)])).catch(() => {});
 
 // ---------- работа с canvas ----------
 // gray: 'luma' — обычная яркость; 'max' — самый яркий канал (тёмный текст на цветной плашке).
@@ -259,7 +262,8 @@ export const BONUS = { name: 0.12, exact: 0.03, number: 0.16, hp: 0.05, hpStrong
 // сходство картинки выше этого — почти наверняка та самая карта
 export const SURE = { sim: 0.62, gap: 0.08 };
 // Быстрый путь: картинка узнана однозначно — текст не читаем (перепечатки с тем же рисунком сюда не попадают: у них нет отрыва)
-export const FAST = { sim: 0.6, gap: 0.12 };
+// Пары [сходство, отрыв]: подходит любая. Ошибки на стенде — с отрывом < 0.06, верные — от 0.1 и выше.
+export const FAST = [[0.6, 0.12], [0.5, 0.17]];
 
 function allSims(db, q) {
   const out = new Float32Array(db.ids.length);
@@ -373,14 +377,22 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
   const ocrLang = ocrLangOf(lang);
   const [index, meta] = await Promise.all([loadIndex(lang, onStage), metaDb()]);
   nameTable(index, meta);
+  const T0 = performance.now(), mark = (k) => opts.debug && ((opts.debug.t ??= {})[k] = Math.round(performance.now() - T0));
   card = findCard(card);
+  mark('find');
   const W = 900, H = Math.round(card.height * (W / card.width));
   const headCrop = (tw) => crop(card, card.width * 0.02, 0, card.width * 0.85, card.height * 0.17, tw / card.width, true);
   const merge = (a, b) => [...a, ...b].sort((x, y) => y.score - x.score).filter((x, i, arr) => arr.findIndex((y) => y.n === x.n) === i);
 
-  const T0 = performance.now(), mark = (k) => opts.debug && ((opts.debug.t ??= {})[k] = Math.round(performance.now() - T0));
   const prefer = (id) => index.byId.get(`${lang}:${id}`) || index.byId.get(`en:${id}`) || LANG_KEYS.map((k) => index.byId.get(`${k}:${id}`)).find(Boolean);
-  // нейросеть считает вектор фото параллельно с чтением текста
+  // Название (верхняя полоса) и номер (нижняя) читаем одновременно в двух воркерах — после нейросети:
+  // если картинка узнана однозначно, текст не нужен вовсе.
+  const read1 = () => Promise.all([
+    ocr(headCrop(1000), 'head', '6', ocrLang).finally(() => mark('head1')),
+    ocr(crop(card, 0, card.height * 0.86, card.width, card.height * 0.14, (opts.bw || 2000) / card.width, true), 'bottom', '11').finally(() => mark('bottom1')),
+  ]);
+  const read1P = opts.parallel === true ? read1() : null; // параллельно медленнее: воркеры и нейросеть делят процессор
+  read1P?.catch(() => {});
   const visP = Promise.all([embedDb(), embedPhoto(card)]);
   let sims = null;
 
@@ -394,7 +406,8 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
     const other = top.find((i) => i !== best && sims[i] < bestV - 0.02);
     const twins = top.filter((i) => sims[i] >= bestV - 0.02).length;
     if (opts.debug) opts.debug.vis = [db.ids[best], +bestV.toFixed(3), other == null ? null : +(bestV - sims[other]).toFixed(3), twins];
-    if (bestV >= FAST.sim && twins === 1 && (other == null || bestV - sims[other] >= FAST.gap)) {
+    const gap = other == null ? 1 : bestV - sims[other];
+    if (twins === 1 && (opts.fastRules || FAST).some(([sim, g]) => bestV >= sim && gap >= g)) {
       const c = prefer(db.ids[best]);
       if (c) {
         const candidates = [c, ...top.slice(1).map((i) => prefer(db.ids[i])).filter(Boolean)].filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i);
@@ -404,12 +417,8 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
     }
   }
 
-  // Название (верхняя полоса) и номер (нижняя) читаем одновременно в двух воркерах.
   onStage('st.read');
-  const [h1, bottom] = await Promise.all([
-    ocr(headCrop(1000), 'head', '6', ocrLang),
-    ocr(crop(card, 0, card.height * 0.86, card.width, card.height * 0.14, 2000 / card.width, true), 'bottom', '11'),
-  ]);
+  const [h1, bottom] = await (read1P || read1());
   const head = { text: h1.text, lines: h1.lines.map((l) => ({ text: l.text })) };
   let names = findNames(index, head.lines, 1, lang);
   let text = `${head.text}\n${bottom.text}`;
@@ -423,13 +432,12 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
   if (!res.sure) {
     onStage('st.read2');
     // номер: у новых карт внизу слева, у старых — справа; читаем углы крупно и только цифры
-    const DIGITS = { tessedit_char_whitelist: '0123456789/' };
     const corner = (right) => crop(card, right ? card.width * 0.45 : 0, card.height * 0.8, card.width * 0.55, card.height * 0.2, 1400 / (card.width * 0.55), true);
     const [h2, full, numL, numR] = await Promise.all([
-      ocr(headCrop(1600), 'head', '6', ocrLang),
-      !number || !names.length ? ocr(crop(card, 0, 0, card.width, card.height, W / card.width, true), 'bottom', '3') : null,
-      !number ? ocr(corner(false), 'digits', '11', 'eng', DIGITS) : null,
-      !number ? ocr(corner(true), 'digits', '11', 'eng', DIGITS) : null,
+      ocr(headCrop(1600), 'head', '6', ocrLang).finally(() => mark('head2')),
+      opts.full === true && (!number || !names.length) ? ocr(crop(card, 0, 0, card.width, card.height, W / card.width, true), 'bottom', '3').finally(() => mark('full2')) : null,
+      !number ? ocr(corner(false), 'digits', '11', 'eng', DIGITS).then((r) => (mark('numL2'), r)) : null,
+      !number ? ocr(corner(true), 'digitsR', '11', 'eng', DIGITS).then((r) => (mark('numR2'), r)) : null,
     ]);
     number ??= findNumber(`${numL?.text || ''}\n${numR?.text || ''}`);
     head.text += `\n${h2.text}`;

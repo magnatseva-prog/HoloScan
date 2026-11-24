@@ -27,6 +27,10 @@ console.log('быстрый путь:', fast.length, 'из', rows.length, ', о�
 
 const ms = rows.map((r) => r[1]).sort((a, b) => a - b);
 console.log('медиана', ms[ms.length >> 1], 'мс; p90', ms[Math.floor(ms.length * 0.9)], 'мс');
+// время по этапам (мс от начала recognize)
+const st = {};
+for (const r of rows) for (const [k, v] of Object.entries(r[9] || {})) (st[k] ??= []).push(v);
+console.log('этапы:', Object.entries(st).map(([k, v]) => `${k} ${Math.round(v.reduce((a, b) => a + b, 0) / v.length)} (n=${v.length})`).join(', '));
 console.log(summary);
 await b.close(); server.kill();
 rmSync(`${ROOT}www/test`, { recursive: true, force: true }); // не запускать одновременно с tools/screenshots.mjs

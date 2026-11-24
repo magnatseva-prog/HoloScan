@@ -599,16 +599,8 @@ function addScan(canvas) {
       item.sure = r.sure;
       item.debug = `OCR: ${r.text.replace(/\s+/g, ' ').slice(0, 400)}\nName: ${r.name || '—'} · No.: ${r.number ? `${r.number.num}/${r.number.total}` : '—'} · HP: ${r.hp || '—'} · ${r.lang}${r.sure ? '' : ' · unsure'}`;
       item.status = !item.card ? 'err' : r.sure ? 'ok' : 'unsure';
-      if (item.card) {
-        item.detail = await cardDetail(item.card.lang, item.card.id).catch(() => null);
-        item.detailFor = `${item.card.lang}:${item.card.id}`;
-        item.variant = bestVariant(item.detail, cur());
-      }
-      // неуверенный скан не тратит лимит и не попадает в коллекцию сам — сначала пусть проверят
-      if (item.status === 'ok') {
-        if (st.autoCollect) collectScan(item, index);
-        if (!st.firstFind) celebrate();
-      }
+      renderTray(); // карту показываем сразу, цену догружаем отдельно — следующий скан сеть не ждёт
+      if (item.card) finishScan(item, index);
     } catch (e) {
       console.error(e);
       item.status = 'err';
@@ -616,6 +608,22 @@ function addScan(canvas) {
     }
     renderTray();
   });
+}
+
+// цена и добавление в коллекцию — вне очереди распознавания
+async function finishScan(item, index) {
+  const card = item.card;
+  const detail = await cardDetail(card.lang, card.id).catch(() => null);
+  if (item.card !== card) return; // пока грузилось, человек выбрал другую карту
+  item.detail = detail;
+  item.detailFor = `${card.lang}:${card.id}`;
+  item.variant = bestVariant(detail, cur());
+  // неуверенный скан не попадает в коллекцию сам — сначала пусть проверят
+  if (item.status === 'ok') {
+    if (st.autoCollect) collectScan(item, index);
+    if (!st.firstFind) celebrate();
+  }
+  renderTray();
 }
 
 function renderTray() {
