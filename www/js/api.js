@@ -102,6 +102,45 @@ export function loadIndex(cardLang = 'en', onProgress) {
   return indexes.get(key);
 }
 
+// ---------- индекс для распознавания: все языки сразу ----------
+// Каталогу хватает английского и основного языка (из сети, самые свежие), а сканер должен узнавать
+// карту на любом языке. Остальные языки берём из встроенного data/cards.json (tools/build_index.py).
+let bundledP = null;
+const bundled = () => (bundledP ??= getJSON('data/cards.json').catch((e) => { bundledP = null; throw e; }));
+const scanIndexes = new Map();
+export function loadScanIndex(cardLang = 'en', onProgress) {
+  if (!scanIndexes.has(cardLang)) {
+    const p = (async () => {
+      const base = await loadIndex(cardLang, onProgress);
+      const data = await bundled().catch(() => null);
+      if (!data) return base; // файла нет — работаем как раньше
+      const cards = [...base.cards], byName = new Map([...base.byName].map(([k, v]) => [k, [...v]]));
+      const byId = new Map(base.byId), sets = new Map(base.sets);
+      for (const [lang, { sets: sl, cards: cl }] of Object.entries(data.langs)) {
+        if (base.langs.includes(lang)) continue; // этот язык уже есть свежим из сети
+        const imgBase = new Map();
+        for (const [id, name, official, total, ib] of sl) {
+          sets.set(`${lang}:${id}`, { id, name, cardCount: { official, total } });
+          imgBase.set(id, ib);
+        }
+        for (const [id, localId, name, img] of cl) {
+          const setId = id.slice(0, id.lastIndexOf('-'));
+          const image = img === 1 ? `${imgBase.get(setId)}/${localId}` : img || byId.get(`en:${id}`)?.image;
+          const card = { id, localId, name, image, lang, n: norm(name) };
+          cards.push(card);
+          byId.set(`${lang}:${id}`, card);
+          if (!byName.has(card.n)) byName.set(card.n, []);
+          byName.get(card.n).push(card);
+        }
+      }
+      return { cards, byName, sets, byId, langs: [...new Set([...base.langs, ...Object.keys(data.langs)])], scan: true };
+    })();
+    p.catch(() => scanIndexes.delete(cardLang));
+    scanIndexes.set(cardLang, p);
+  }
+  return scanIndexes.get(cardLang);
+}
+
 export function setOf(index, card) {
   const setId = card.id.slice(0, card.id.lastIndexOf('-'));
   return index.sets.get(`${card.lang}:${setId}`);

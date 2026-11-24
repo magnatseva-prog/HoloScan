@@ -21,7 +21,7 @@ await p.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle2' });
 await sleep(1500);
 const summary = await p.evaluate((h, o) => import('/test/bench.js').then((m) => m.run({ harsh: h, opts: o })), harsh, opts);
 const rows = await p.evaluate(() => window.__bench.rows);
-for (const r of rows) if (r[2] !== 'OK') console.log(r.slice(0, 7).join(' | '), JSON.stringify(r[7]), JSON.stringify(r[8]));
+for (const r of rows) if (r[2] !== 'OK') console.log(r.slice(0, 7).join(' | '), JSON.stringify(r[7]), JSON.stringify(r[8]), r[10], JSON.stringify(r[11]));
 const fast = rows.filter((r) => r[4] === 'fast');
 console.log('быстрый путь:', fast.length, 'из', rows.length, ', ошибок в нём:', fast.filter((r) => r[2] !== 'OK').length);
 

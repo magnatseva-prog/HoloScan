@@ -64,7 +64,7 @@ export async function run({ filter = () => true, opts = {}, harsh = false } = {}
     const hit = ids[0] === id, in3 = ids.slice(0, 3).includes(id);
     out.n++; out.ms += ms; out.ok += hit; out.top3 += in3;
     if (res.sure) { out.sure++; out.sureWrong += !hit; }
-    out.rows.push([f, Math.round(ms), hit ? 'OK' : in3 ? 'top3' : 'MISS', ids[0] || '—', res.fast ? 'fast' : res.sure ? 'sure' : '?', res.name || '', res.number?.raw || '', dbg.scores, dbg.vis, dbg.t]);
+    out.rows.push([f, Math.round(ms), hit ? 'OK' : in3 ? 'top3' : 'MISS', ids[0] || '—', res.fast ? 'fast' : res.sure ? 'sure' : '?', res.name || '', res.number?.raw || '', dbg.scores, dbg.vis, dbg.t, dbg.ocr, (res.head || '').slice(0, 80)]);
   }
   out.done = true;
   out.summary = `${out.ok}/${out.n} точно, ${out.top3}/${out.n} в первой тройке, ${Math.round(out.ms / out.n)} мс; уверенных ${out.sure}, из них неверных ${out.sureWrong}`;

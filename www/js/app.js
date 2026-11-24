@@ -1,5 +1,5 @@
-import { loadIndex, norm, setOf, imgUrl, cardDetail, priceFor, variantsOf, bestVariant, fmtPrice, CARD_LANGS, LANG_KEYS } from './api.js';
-import { recognize, warmUp } from './recognize.js';
+import { loadIndex, loadScanIndex, norm, setOf, imgUrl, cardDetail, priceFor, variantsOf, bestVariant, fmtPrice, CARD_LANGS, LANG_KEYS } from './api.js';
+import { recognize, warmUp, warmIndex } from './recognize.js';
 import { warmEmbed } from './embed.js';
 import * as store from './store.js';
 import { t, setLang, plural, dateLocale, UI_LANGS } from './i18n.js';
@@ -33,6 +33,8 @@ if (!CARD_LANGS[st.cardLang]) st.cardLang = 'en';
 st.uiLang ??= 'en';
 setLang(st.uiLang);
 const idx = () => loadIndex(st.cardLang);
+// для сканов и экрана карты — все языки (карта могла быть японской при английских настройках)
+const sidx = () => loadScanIndex(st.cardLang);
 
 function toast(msg, ms = 2200) {
   const el = $('#toast');
@@ -178,6 +180,7 @@ async function initCatalog() {
     // всё тяжёлое для сканера грузим заранее, чтобы первый скан не ждал
     warmUp(st.cardLang);
     warmEmbed();
+    setTimeout(() => warmIndex(st.cardLang), 1200); // после каталога, чтобы не тормозить первый экран
   } catch (e) {
     status.textContent = t('cat.fail');
     return;
@@ -226,7 +229,7 @@ async function renderSheet() {
   const s = sheetState;
   if (!s) return;
   const body = $('#sheet-body');
-  const index = await idx();
+  const index = await sidx();
   const card = s.card;
   if (!card) {
     body.innerHTML = `${s.photo ? `<img class="hero" src="${s.photo}">` : ''}
@@ -587,7 +590,7 @@ function addScan(canvas) {
   queue = queue.then(async () => {
     try {
       const r = await recognize(canvas, (key, p) => { item.stage = t(key, p); renderTray(); }, { lang: st.cardLang });
-      const index = await idx();
+      const index = await sidx();
       // имя прочиталось на другом языке (испанская карта при английских настройках) — берём эту версию
       if (r.candidates[0] && r.lang !== r.candidates[0].lang) {
         const other = await cardInLang(index, r.candidates[0], r.lang);
@@ -660,7 +663,7 @@ function renderTray() {
 }
 
 $('#collect-all').onclick = async () => {
-  const index = await idx();
+  const index = await sidx();
   let n = 0;
   for (const s of scans) {
     if (s.status !== 'ok' || s.collUid) continue; // неуверенные — только вручную
@@ -693,7 +696,7 @@ store.onChange(() => { if ($('#v-portfolio').classList.contains('active')) rende
 
 // запись коллекции или списка желаний → экран карты
 async function openItem(i) {
-  const index = await idx();
+  const index = await sidx();
   const card = index.byId.get(`${i.lang}:${i.id}`) || { ...i, n: norm(i.name) };
   openCard({ card, variant: i.variant });
 }

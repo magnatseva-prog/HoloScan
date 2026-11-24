@@ -58,6 +58,7 @@
 - Gives an estimated PSA-style grade — an estimate, not an official grade
 
 **🌍 Languages**
+- **Any language, automatically** — Japanese, Korean, Chinese, Thai and European cards are recognized without switching settings
 - Cards in **14 languages**: English, Español, Français, Deutsch, Italiano, Português, 日本語, 한국어, 中文, ไทย, Bahasa Indonesia and more
 - App in **8 languages**: English, Русский, 日本語, Español, Français, Deutsch, Italiano, Português
 
@@ -294,6 +295,7 @@ HoloScan is a fan-made tool and is not affiliated with, endorsed or sponsored by
 - **Коллекция:** график стоимости, лидеры изменений за неделю, сеты с прогрессом сбора, папки, список желаний с оповещениями о снижении цены, калькулятор обмена, синхронизация через Google.
 - **AI-оценка состояния:** центровка, углы и края по фото, примерная оценка по шкале PSA.
 - **Светлая и тёмная тема**, или как в системе.
+- **Любой язык сам:** японские, корейские, китайские, тайские и европейские карты узнаются без переключения настроек.
 - **Языки:** карты на 14 языках, интерфейс на 8, включая русский и японский.
 
 Сборка описана выше, заметки для разработки — в [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

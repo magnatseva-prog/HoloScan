@@ -1,6 +1,6 @@
 // Распознавание карты по фото: OCR названия и номера (tesseract.js, офлайн),
 // поиск в индексе TCGdex, выбор среди похожих по картинке.
-import { loadIndex, norm, setOf, imgUrl, LANG_KEYS } from './api.js';
+import { loadScanIndex, norm, setOf, imgUrl, LANG_KEYS } from './api.js';
 import { embedDb, embedPhoto, simAt, simTo } from './embed.js';
 
 // Отдельный воркер на каждую область: название и номер читаются параллельно,
@@ -95,7 +95,9 @@ const sim = (a, b) => 1 - lev(a, b) / Math.max(a.length, b.length);
 // («pjpiecharcadlp»), поэтому ищем имя как подстроку строки.
 // Для иероглифов, каны и тайского имена короткие — берём биграммы.
 const ASIAN = new Set(['ja', 'ko', 'zh-tw', 'zh-cn', 'th']);
-const gramOf = (index) => (index.langs?.some((l) => ASIAN.has(l)) ? 2 : 3);
+// азиатское письмо плотное — сравниваем по парам символов, латиницу — по тройкам
+const ASIAN_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/u;
+const gramOf = (flat) => (ASIAN_RE.test(flat) ? 2 : 3);
 function trigrams(s, g = 3) {
   const out = new Set();
   for (let i = 0; i + g <= s.length; i++) out.add(s.slice(i, i + g));
@@ -114,6 +116,9 @@ function metaDb() {
   return metaP;
 }
 export const warmMeta = () => metaDb();
+// индекс всех языков и таблицы имён собираются ~1 с — делаем это заранее, пока человек смотрит каталог
+export const warmIndex = (lang = 'en') => Promise.all([loadScanIndex(lang), metaDb()])
+  .then(([index, meta]) => { nameTable(index, meta); nameIndex(index); }).catch(() => {});
 function nameTable(index, meta) {
   if (index.nt) return index.nt;
   const nt = new Map();
@@ -129,11 +134,12 @@ function nameTable(index, meta) {
 }
 function nameIndex(index) {
   if (index.tri) return index.tri;
-  const tri = new Map(), names = [], g = gramOf(index);
+  const tri = new Map(), names = [];
   for (const n of index.nt.keys()) {
     const flat = n.replace(/[^\p{L}\p{N}]/gu, '');
+    const g = gramOf(flat);
     if (flat.length < (g === 2 ? 2 : 4)) continue;
-    const id = names.push({ n, flat, ntri: 0 }) - 1;
+    const id = names.push({ n, flat, ntri: 0, asian: g === 2 }) - 1;
     const ts = trigrams(flat, g);
     names[id].ntri = ts.size;
     for (const t of ts) {
@@ -141,7 +147,7 @@ function nameIndex(index) {
       tri.get(t).push(id);
     }
   }
-  return (index.tri = { tri, names, g });
+  return (index.tri = { tri, names });
 }
 // лучшее сходство имени с любым окном строки той же длины (±1)
 function subSim(line, flat) {
@@ -157,7 +163,7 @@ function subSim(line, flat) {
 }
 
 function findNames(index, lines, cardH, lang = 'en') {
-  const { tri, names, g } = nameIndex(index);
+  const { tri, names } = nameIndex(index);
   const scores = new Map();
   const consider = (text, weight) => {
     // «Pikachu@x», «Pikachu€X» — так OCR видит стилизованное «ex»
@@ -165,6 +171,7 @@ function findNames(index, lines, cardH, lang = 'en') {
     // строки правил («Pokémon ex rule», «regla de los Pokémon V») — не название
     if (/\b(rule|regla|knocked|cuando|when|retreat|retirada|weakness|debilidad|illus)\b/.test(t)) return;
     const flat = t.replace(/[^\p{L}]/gu, '');
+    const g = gramOf(flat);
     if (flat.length < (g === 2 ? 2 : 4)) return;
     const hits = new Map();
     for (const gr of trigrams(flat, g)) for (const id of tri.get(gr) || []) hits.set(id, (hits.get(id) || 0) + 1);
@@ -175,7 +182,8 @@ function findNames(index, lines, cardH, lang = 'en') {
       // короткие имена совпадают случайно — для них нужна точность;
       // имена только с других языков (не выбранного и не английского) — тоже строже
       const e = index.nt.get(nm.n);
-      const foreign = !e.langs.has(lang) && !e.langs.has('en');
+      // азиатское имя прочитано азиатскими знаками — тут путать не с чем, строгость не нужна
+      const foreign = !nm.asian && !e.langs.has(lang) && !e.langs.has('en');
       if (s < (nm.flat.length <= 5 ? 1 : nm.flat.length <= 7 ? 0.85 : 0.75) + (foreign ? 0.12 : 0)) continue;
       const sc = s * weight + nm.flat.length * 0.003;
       if ((scores.get(nm.n) || 0) < sc) scores.set(nm.n, sc);
@@ -258,7 +266,7 @@ function loadImg(url) {
     im.src = url;
   });
 }
-export const BONUS = { name: 0.12, exact: 0.03, number: 0.16, hp: 0.05, hpStrong: 0.08, total: 0.04 };
+export const BONUS = { name: 0.12, exact: 0.03, number: 0.16, hp: 0.05, hpStrong: 0.08, total: 0.04, script: 0.04 };
 // сходство картинки выше этого — почти наверняка та самая карта
 export const SURE = { sim: 0.62, gap: 0.08 };
 // Быстрый путь: картинка узнана однозначно — текст не читаем (перепечатки с тем же рисунком сюда не попадают: у них нет отрыва)
@@ -271,6 +279,23 @@ function allSims(db, q) {
   return out;
 }
 // индексы k лучших (из всех или из списка)
+// какими моделями OCR читать карту, похожую на эти id: латиница — английской моделью,
+// азиатская карта — моделью её языка (основной язык из настроек — в приоритете)
+function scriptsOf(index, ids, lang) {
+  const out = [];
+  for (const id of ids) {
+    let m = null;
+    if (LATIN.some((l) => index.byId.has(`${l}:${id}`))) m = 'eng';
+    else {
+      const asian = [lang, ...ASIAN].find((l) => ASIAN.has(l) && index.byId.has(`${l}:${id}`));
+      if (asian) m = ocrLangOf(asian);
+    }
+    if (m && !out.includes(m)) out.push(m);
+  }
+  // модель основного языка — первой, она уже прогрета
+  const own = ocrLangOf(lang);
+  return out.includes(own) ? [own, ...out.filter((m) => m !== own)] : out;
+}
 function topK(sims, k, among = null) {
   const best = [];
   const consider = (i) => {
@@ -370,12 +395,14 @@ function findCard(src) {
 
 // ---------- главный вход ----------
 // card — canvas с фото карты (обрезанный по рамке). Возвращает {candidates, name, number, text}.
-// opts.lang — язык карт из настроек (код TCGdex: en, es, ja…).
+// opts.lang — основной язык карт из настроек (код TCGdex: en, es, ja…). Узнаются карты на всех языках,
+// основной лишь показывается первым, когда одна и та же карта есть на нескольких.
 export async function recognize(card, onStage = () => {}, opts = {}) {
   onStage('st.load');
   const lang = opts.lang || 'en';
-  const ocrLang = ocrLangOf(lang);
-  const [index, meta] = await Promise.all([loadIndex(lang, onStage), metaDb()]);
+  let ocrLangs = [ocrLangOf(lang)];
+  const script = { latin: 0, asian: 0 }; // что прочиталось, когда заголовок читали двумя моделями
+  const [index, meta] = await Promise.all([loadScanIndex(lang, onStage), metaDb()]);
   nameTable(index, meta);
   const T0 = performance.now(), mark = (k) => opts.debug && ((opts.debug.t ??= {})[k] = Math.round(performance.now() - T0));
   card = findCard(card);
@@ -387,27 +414,41 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
   const prefer = (id) => index.byId.get(`${lang}:${id}`) || index.byId.get(`en:${id}`) || LANG_KEYS.map((k) => index.byId.get(`${k}:${id}`)).find(Boolean);
   // Название (верхняя полоса) и номер (нижняя) читаем одновременно в двух воркерах — после нейросети:
   // если картинка узнана однозначно, текст не нужен вовсе.
+  // заголовок читаем каждой нужной моделью (обычно одной) и склеиваем прочитанное
+  const readHead = (tw) => Promise.all(ocrLangs.map((l) => ocr(headCrop(tw), 'head', '6', l)))
+    .then((rs) => {
+      rs.forEach((r, k) => {
+        if (ocrLangs[k] === 'eng') script.latin += (r.text.match(/[A-Za-z]{3,}/g) || []).join('').length;
+        else script.asian += (r.text.match(new RegExp(ASIAN_RE.source, 'gu')) || []).length;
+      });
+      return { text: rs.map((r) => r.text).join('\n'), lines: rs.flatMap((r) => r.lines) };
+    });
   const read1 = () => Promise.all([
-    ocr(headCrop(1000), 'head', '6', ocrLang).finally(() => mark('head1')),
+    readHead(1000).finally(() => mark('head1')),
     ocr(crop(card, 0, card.height * 0.86, card.width, card.height * 0.14, (opts.bw || 2000) / card.width, true), 'bottom', '11').finally(() => mark('bottom1')),
   ]);
-  const read1P = opts.parallel === true ? read1() : null; // параллельно медленнее: воркеры и нейросеть делят процессор
-  read1P?.catch(() => {});
   const visP = Promise.all([embedDb(), embedPhoto(card)]);
   let sims = null;
 
-  if (opts.fast !== false) {
+  {
     const [db, q] = await visP;
     sims = allSims(db, q);
     mark('vis');
     const top = topK(sims, 8);
+    // Модель OCR — по языку карты, на которую фото похоже: японскую карту читаем японской моделью,
+    // даже если в настройках английский. Латиница — общая английская модель.
+    // одинаковый рисунок бывает у японской и английской версии — тогда читаем обеими моделями
+    const near = top.filter((i) => sims[i] >= sims[top[0]] - 0.03).slice(0, 4).map((i) => db.ids[i]);
+    const models = scriptsOf(index, near, lang);
+    if (models.length) ocrLangs = models;
+    if (opts.debug) opts.debug.ocr = ocrLangs.join('+');
     const best = top[0], bestV = sims[best];
     // отрыв считаем от лучшей карты с другим рисунком: у одинаковых перепечаток он почти нулевой
     const other = top.find((i) => i !== best && sims[i] < bestV - 0.02);
     const twins = top.filter((i) => sims[i] >= bestV - 0.02).length;
     if (opts.debug) opts.debug.vis = [db.ids[best], +bestV.toFixed(3), other == null ? null : +(bestV - sims[other]).toFixed(3), twins];
     const gap = other == null ? 1 : bestV - sims[other];
-    if (twins === 1 && (opts.fastRules || FAST).some(([sim, g]) => bestV >= sim && gap >= g)) {
+    if (opts.fast !== false && twins === 1 && (opts.fastRules || FAST).some(([sim, g]) => bestV >= sim && gap >= g)) {
       const c = prefer(db.ids[best]);
       if (c) {
         const candidates = [c, ...top.slice(1).map((i) => prefer(db.ids[i])).filter(Boolean)].filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i);
@@ -418,7 +459,7 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
   }
 
   onStage('st.read');
-  const [h1, bottom] = await (read1P || read1());
+  const [h1, bottom] = await read1();
   const head = { text: h1.text, lines: h1.lines.map((l) => ({ text: l.text })) };
   let names = findNames(index, head.lines, 1, lang);
   let text = `${head.text}\n${bottom.text}`;
@@ -434,7 +475,7 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
     // номер: у новых карт внизу слева, у старых — справа; читаем углы крупно и только цифры
     const corner = (right) => crop(card, right ? card.width * 0.45 : 0, card.height * 0.8, card.width * 0.55, card.height * 0.2, 1400 / (card.width * 0.55), true);
     const [h2, full, numL, numR] = await Promise.all([
-      ocr(headCrop(1600), 'head', '6', ocrLang).finally(() => mark('head2')),
+      readHead(1600).finally(() => mark('head2')),
       opts.full === true && (!number || !names.length) ? ocr(crop(card, 0, 0, card.width, card.height, W / card.width, true), 'bottom', '3').finally(() => mark('full2')) : null,
       !number ? ocr(corner(false), 'digits', '11', 'eng', DIGITS).then((r) => (mark('numL2'), r)) : null,
       !number ? ocr(corner(true), 'digitsR', '11', 'eng', DIGITS).then((r) => (mark('numR2'), r)) : null,
@@ -472,10 +513,12 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
         }
       }
     }
-    const byNum = new Set(number ? index.cards.filter((c) => localMatch(c, number) && setTotalMatch(index, c, number)) : []);
+    // по номеру: считаем разные карты, а не их копии на 14 языках
+    const numIds = new Set(number ? index.cards.filter((c) => localMatch(c, number) && setTotalMatch(index, c, number)).map((c) => c.id) : []);
+    const byNum = { has: (c) => !!c && numIds.has(c.id) };
     const both = [...byName].filter((c) => byNum.has(c));
     // совпали и имя, и номер — других не нужно; иначе берём и тех и других и решаем по картинке
-    let pool = both.length ? both : [...byName, ...(byNum.size <= 40 ? byNum : [])];
+    let pool = both.length ? both : [...byName, ...(numIds.size <= 40 ? [...numIds].map(prefer).filter(Boolean) : [])];
     // одинаковые id на двух языках — оставляем язык из настроек
     const byId = new Map();
     for (const c of pool) {
@@ -494,7 +537,12 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
     const put = (c, v, s) => { const p = score.get(c.id); if (!p || s > p.s) score.set(c.id, { c, v, s }); };
     // число карт в сете («/182») различает перепечатки с одинаковым рисунком, даже если сам номер прочитан с ошибкой
     const totalOk = (c) => !!number && !!setOf(index, c)?.cardCount && setTotalMatch(index, c, number);
-    const bonus = (id, c = prefer(id)) => (nameIds.has(id) ? BONUS.name + (exactIds.has(id) ? BONUS.exact : 0) : 0) + (hpIds.has(id) ? hpBonus : 0)
+    // читали двумя моделями и одна явно победила — версии на другой письменности чуть ниже
+    const bothRead = ocrLangs.length > 1;
+    const latinWins = bothRead && script.latin >= 3 * script.asian + 6, asianWins = bothRead && script.asian >= 3 && script.asian * 2 > script.latin;
+    const isLatin = (id) => LATIN.some((l) => index.byId.has(`${l}:${id}`));
+    const scriptPen = (id) => (latinWins && !isLatin(id) ? -BONUS.script : asianWins && isLatin(id) ? -BONUS.script : 0);
+    const bonus = (id, c = prefer(id)) => scriptPen(id) + (nameIds.has(id) ? BONUS.name + (exactIds.has(id) ? BONUS.exact : 0) : 0) + (hpIds.has(id) ? hpBonus : 0)
       + (c && !byNum.has(c) && totalOk(c) ? BONUS.total : 0);
 
     // 1) кандидаты по тексту: сходство картинки плюс бонус за совпавшие имя, номер, HP
@@ -518,7 +566,7 @@ export async function recognize(card, onStage = () => {}, opts = {}) {
       const hpIdx = [...hpIds].map((id) => db.pos.get(id)).filter((x) => x != null);
       for (const i of [...topK(sims, 40), ...topK(sims, 30, hpIdx)]) {
         const c = prefer(db.ids[i]);
-        if (c) put(c, sims[i], sims[i] + bonus(c.id, c));
+        if (c) put(c, sims[i], sims[i] + bonus(c.id, c) + (byNum.has(c) ? BONUS.number : 0));
       }
     }
     return finish();
