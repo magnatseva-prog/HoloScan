@@ -397,7 +397,7 @@ async function refresh(force) {
 export function initViews(c) {
   ctx = c;
   segments('coll-seg', () => renderPortfolio());
-  segments('cat-seg', (s) => { if (s === 'sets') renderSets(); if (s === 'sealed') renderSealed(); });
+  segments('cat-seg', (s) => { if (s === 'sets') renderSets(); if (s === 'sealed') renderSealed(); if (s === 'packs') ctx.renderPacks?.(); });
   $('#panel-close').onclick = closePanel;
   let tq, ts;
   $('#sq').oninput = () => { clearTimeout(tq); tq = setTimeout(renderSets, 250); };

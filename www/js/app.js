@@ -1,6 +1,7 @@
 import { loadIndex, loadScanIndex, norm, setOf, imgUrl, cardDetail, priceFor, variantsOf, bestVariant, fmtPrice, CARD_LANGS, LANG_KEYS } from './api.js';
 import { recognize, warmUp, warmIndex } from './recognize.js';
 import { warmEmbed } from './embed.js';
+import { initPacks, renderPacks, packOpen, closePack } from './packs.js';
 import * as store from './store.js';
 import { t, setLang, plural, dateLocale, UI_LANGS } from './i18n.js';
 import * as sync from './sync.js';
@@ -705,6 +706,8 @@ async function openItem(i) {
 function back() {
   if (tutorial.isOpen()) return tutorial.back(), true;
   if (views.modalOpen()) return views.closeModal(), true;
+  if (!$('#sheet').hidden && packOpen()) return $('#sheet-close').click(), true;
+  if (packOpen()) return closePack(), true;
   if (!$('#celebrate').hidden) return ($('#celebrate').hidden = true), true;
   if (!$('#manual').hidden) return ($('#manual').hidden = true), true;
   if (!$('#settings').hidden) return ($('#settings').hidden = true), true;
@@ -735,7 +738,8 @@ function openTutorial() {
   });
 }
 
-views.initViews({ openCard, openItem, toast, idx, cur, renderGrid, tilePrice });
+views.initViews({ openCard, openItem, toast, idx, cur, renderGrid, tilePrice, renderPacks });
+initPacks({ toast, cur, openCard: (c) => openCard({ card: { ...c, n: norm(c.name) }, candidates: [] }) });
 initGradeView({ openPanel: views.openPanel, openCard, toast, tilePrice, shootGrade: () => openScanner('grade') });
 initCatalog();
 if (!st.tutorialDone) openTutorial();

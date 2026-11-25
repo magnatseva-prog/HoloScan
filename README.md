@@ -52,6 +52,11 @@
 - Sign in with Google to sync the collection across devices
 - **Light and dark theme** — or follow the system setting
 
+**🎁 Pack opening**
+- Open booster packs of **76 real sets** — from Black & White to Mega Evolution — with real cards and approximate pull rates
+- Swipe to tear the pack, flip cards one by one; rare pulls charge up, burst with light and shimmer like holofoil when you tilt the phone
+- See what the pack was worth and add the pulls to your collection
+
 **🛡 AI grading**
 - Estimates condition from a photo, the way grading companies check it: **centering** (e.g. 56/44), **corners** and **edges**
 - Compares the photo with the original card image, so artwork isn't mistaken for wear
@@ -293,6 +298,7 @@ HoloScan is a fan-made tool and is not affiliated with, endorsed or sponsored by
 - **Распознавание на телефоне:** нейросеть сравнивает фото с базой из 25 000+ карт, работает без интернета. Справляется с бликами, протекторами и наклоном. Есть пакетный режим: кладёшь карты по одной, снимки делаются сами.
 - **Цены:** TCGplayer и Cardmarket для каждого варианта, динамика цены, 3 500+ запечатанных товаров (бустер-боксы, ETB, тины).
 - **Коллекция:** график стоимости, лидеры изменений за неделю, сеты с прогрессом сбора, папки, список желаний с оповещениями о снижении цены, калькулятор обмена, синхронизация через Google.
+- **Открытие паков:** 76 настоящих сетов, свайпом надрываешь пак, карты переворачиваются по одной, редкие — со вспышкой и голограммой; в конце — сколько стоил пак.
 - **AI-оценка состояния:** центровка, углы и края по фото, примерная оценка по шкале PSA.
 - **Светлая и тёмная тема**, или как в системе.
 - **Любой язык сам:** японские, корейские, китайские, тайские и европейские карты узнаются без переключения настроек.

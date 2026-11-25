@@ -26,6 +26,7 @@
         <button data-seg="cards" class="sel" data-i18n="seg.cards"></button>
         <button data-seg="sets" data-i18n="seg.sets"></button>
         <button data-seg="sealed" data-i18n="seg.sealed"></button>
+        <button data-seg="packs" data-i18n="seg.packs"></button>
       </div>
       <div id="cat-cards" class="segpane">
         <div class="search">
@@ -50,6 +51,7 @@
         <div id="sealkinds" class="chips scroll"></div>
         <div id="sealgrid" class="grid"></div>
       </div>
+      <div id="cat-packs" class="segpane" hidden></div>
     </section>
 
     <!-- Оценка состояния -->
@@ -177,6 +179,9 @@
     <p class="big" data-i18n="first.congrats"></p>
     <p data-i18n="first.sub"></p>
   </div>
+
+  <!-- Открытие пака (на весь экран) -->
+  <section id="pack-open" class="pack-open" hidden></section>
 
   <!-- Обучение при первом запуске -->
   <section id="tutorial" class="tutorial" hidden></section>
